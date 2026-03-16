@@ -1,0 +1,94 @@
+---
+title: "Normality Detection"
+author: "Simon Sloan"
+output: html_document
+---
+## Import dataset Iris 
+Which is about flowers. First we have to understand the variables the dataset has.
+```{r}
+data(iris)
+
+tail(iris)
+dim(iris)
+names(iris) 
+```
+---
+## Let's apply Mardia
+---
+Here we will start with the application of Mardia, according with its respective definition.
+---
+
+### We have to define S (Covariance Matrix)
+```{r}
+    X <- as.matrix(iris[,1:4])
+    n <- 150
+    p <- 4 
+    I <- diag(n)
+    Jn <- matrix(1, nrow = n, ncol = n) 
+    Xc <- (I - 1/n*Jn)%*%X
+    XcT <- t(Xc)
+    S <- 1/n * (XcT%*%Xc)
+    # This is the easiest way. However we do it, as before because is better to understand.
+    SAuto <- cov(X)
+```
+
+### Now, it is important to get Mahalanobis Matrix
+This matrix contains the Mahalanobis structure, where the diagonal elements correspond to squared Mahalanobis distances. 
+
+```{R}
+    SInvert = solve(S)
+    M = Xc%*%SInvert%*%XcT
+```
+
+# First lets compute skewness test
+## Get b1p
+
+```{R}
+    b1p <- 0
+
+    for (i in 1:nrow(M)) {
+        for (j in 1:ncol(M)) {
+            
+            element <- (1/(n^2)) * (M[i, j])^3
+            
+            b1p <- b1p + element
+            
+        }
+    }
+```
+
+## Get EAS and degress of freedom
+
+```{R}
+    EAS<-(n/6)*b1p
+    df<-(1/6)*(p*(p+1)*(p+2))
+    pValueSkewness <- pchisq(EAS, df = df, lower.tail = FALSE)
+    alpha<-0.05
+```
+
+# Lets compute now Kurtosis Test 
+
+```{R}
+    b2p <- (1/n) * sum(diag(M)^2)
+``` 
+
+## Now lets compute z 
+
+```{R}
+    z <- (b2p - p*(p+2)) / sqrt((8*p*(p+2))/n)
+```
+
+## Now lets compute pValue for Kurtosis 
+
+```{R}
+    pValueKurtosis <-pchisq(z^2, df = 1, lower.tail = FALSE)
+    alpha <-0.05
+```
+
+## Interpretation
+
+The skewness test produced a p-value of `r pValueSkewness`, which is smaller than the significance level `r alpha`. Therefore, the null hypothesis of multivariate normality is rejected.
+
+The kurtosis test produced a p-value of `r pValueKurtosis`, which is greater than `r alpha`. Thus, there is no evidence against multivariate kurtosis.
+
+However, since the skewness test is significant, the assumption of multivariate normality is rejected for the iris dataset according to Mardia's test. This result is expected because the dataset contains observations from different species populations.
