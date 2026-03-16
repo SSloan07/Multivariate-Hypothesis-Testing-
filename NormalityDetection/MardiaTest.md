@@ -204,9 +204,9 @@ which approximately follows a standard normal distribution.
 
 The null hypothesis of multivariate normality is evaluated using the p-values obtained from both tests.
 
-If p-value > 0.05, the null hypothesis is not rejected.
+If p-value > $\alpha$, the null hypothesis is not rejected.
 
-If p-value ≤ 0.05, the null hypothesis is rejected.
+If p-value ≤ $\alpha$, the null hypothesis is rejected.
 
 To conclude that the dataset follows a multivariate normal distribution, both tests must be non-significant.
 
@@ -394,7 +394,7 @@ $$
 - Skewness p-value = **0.9473**
 - Kurtosis p-value = **0.2733**
 
-Since both p-values are greater than $0.05$, we **do not reject the null hypothesis**.
+Since both p-values are greater than $0.05$($\alpha$), we **do not reject the null hypothesis**.
 
 Therefore, the data are **consistent with a multivariate normal distribution**.
 
