@@ -137,6 +137,10 @@ The p-value is computed using the chi-square distribution.
 
 ---
 
+## Prove Characteristics
+--- 
+The Doornik–Hansen test is particularly suitable for continuous multivariate data where deviations from normality may arise from both skewness and kurtosis simultaneously. It is especially useful in moderate sample sizes, as it combines these two components into a single statistic, providing a unified assessment of normality. The test performs well when variables are approximately continuous and the data structure does not involve strong categorical effects or discrete levels. Additionally, it is effective in detecting subtle departures from normality that may not be evident when analyzing skewness or kurtosis separately. However, it may be less appropriate for very small samples or datasets with strong non-linear dependencies, as these conditions can affect the accuracy of the transformations used in the test.
+
 ## Interpretation
 
 ---

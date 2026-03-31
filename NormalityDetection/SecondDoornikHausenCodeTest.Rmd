@@ -5,117 +5,137 @@ output: html_document
 ---
 
 ## Lets import the dataset
-In this case we will use the trees dataset
+In this case we will use the iris dataset
 ```{R}
-data(trees)
-tail(trees)
-dim(trees)
+    data(iris) 
+    tail(iris)
+    dim(iris)
 ```
 
+## Describe dataset
 
-## Describe dataset 
-The `trees` dataset contains measurements of 31 black cherry trees. It includes three continuous variables: girth (tree diameter), height, and volume.
+The iris dataset contains 150 observations of iris flowers with four continuous variables: sepal length, sepal width, petal length, and petal width.
 
-This dataset is relatively small but consists entirely of continuous variables, making it suitable for multivariate normality testing.
+Although all variables are continuous, the dataset includes observations from three different species. This creates a mixture of distributions, which often leads to deviations from multivariate normality.
 
-Compared to previous datasets such as mtcars, the variables in this dataset tend to exhibit smoother distributions with fewer extreme values, which makes it more likely to satisfy the assumption of multivariate normality.
+---
 
-## Lets apply Doornik-Hansen
-```{R}
-X <- as.matrix(trees)
+## Let's apply Doornik–Hansen
 
-n <- nrow(X)
-p <- ncol(X)
+---
 
-I <- diag(n)
-Jn <- matrix(1, nrow = n, ncol = n)
+Here we will start with the application of Doornik–Hansen, according with its respective definition. Of course, here we will use the same structure as Mardia where you can see the first step is stract continuos variables and get Mahalanobis Matrix. 
+---
 
-Xc <- (I - 1/n * Jn) %*% X
-XcT <- t(Xc)
+```{r}
+    X <- as.matrix(iris[,1:4])
+    n <- 150
+    p <- 4 
+    I <- diag(n)
+    Jn <- matrix(1, nrow = n, ncol = n) 
+    Xc <- (I - 1/n*Jn)%*%X
+    XcT <- t(Xc)
+    S <- 1/(n-1) * (XcT%*%Xc)
+    # This is the easiest way. However we do it, as before because is better to understand.
+    SAuto <- cov(X)
 
-S <- 1/(n - 1) * (XcT %*% Xc)
-SAuto <- cov(X)
-
-if (isTRUE(all.equal(S, SAuto))) {
-    print("We got the same results")
-}
-```
-
-### Mahalanobis matrix 
-```{R}
-SInvert <- solve(S)
-M <- Xc %*% SInvert %*% XcT
-```
-
-## Skewness component 
-```{R}
-b1p <- 0
-
-for (i in 1:nrow(M)) {
-    for (j in 1:ncol(M)) {
-        b1p <- b1p + (1/(n^2)) * (M[i, j])^3
+    if (isTRUE(all.equal(S, SAuto))) {
+        print("We got the same results")
     }
-}
-
-EAS <- (n/6 * b1p)
-
-Z1 <- sqrt(EAS)
 ```
 
-## Kurtosis component
-```{R}
-b2p <- (1/n) * sum(diag(M)^2)
+### Now, it is important to get Mahalanobis Matrix
+This matrix contains the Mahalanobis structure, where the diagonal elements correspond to squared Mahalanobis distances. 
 
-Z2 <- (b2p - p*(p+2)) / sqrt(8*p*(p+2)/n)
+```{R}
+    SInvert = solve(S)
+    M = Xc%*%SInvert%*%XcT
 ```
 
-## Doornik-Hansen statistic
+# First lets compute skewness test
+## Get b1p
+
 ```{R}
-DH <- Z1^2 + Z2^2
+    b1p <- 0
+
+    for (i in 1:nrow(M)) {
+        for (j in 1:ncol(M)) {
+            
+            element <- (1/(n^2)) * (M[i, j])^3
+            
+            b1p <- b1p + element
+            
+        }
+    }
 ```
 
-## Our Decision
+## Lets get EAS and Z1
 ```{R}
-alpha <- 0.10
-df <- 2
+    EAS <- (n/6 * b1p)
+    df_skew <- (p*(p+1)*(p+2))/6
 
-crit <- qchisq(1 - alpha, df)
-pValueDH <- pchisq(DH, df, lower.tail = FALSE)
+    Z1 <- (EAS - df_skew) / sqrt(2*df_skew)
 ```
-## Lets graph 
+The skewness component is approximated using the Mardia skewness statistic.
+# Second we compute kurtosis test 
+## Get b2p and Z2
+As follow it is present the Z2 formula, which represents the value for Z in Mardia Test. Remember, it represents the kurtosis coeficient. Kurtosis is asosciated with how heavy are the tails: 
+$$
+b_{2,p} =
+\frac{1}{n}
+\sum_{i=1}^{n}
+m_{ii}^{2}
+$$
+
+$$
+Z_2 =
+\frac{b_{2,p} - p(p+2)}
+{\sqrt{\frac{8p(p+2)}{n}}}
+$$
+
+
+We will compute this using the formula. 
 ```{R}
+    b2p <- (1/n) * sum(diag(M)^2)
+    Z2 <- (b2p - p*(p+2))/sqrt(8*p*(p+2)/n)
+```
+
+# Now, lets get DH 
+This is the formula for getting the DH stimator statistic and is probability distribution: 
+$$
+DH = Z_1^2 + Z_2^2
+$$
+$$
+DH \sim \chi^2_2
+$$
+So lets compute as it indicates: 
+```{R}
+ DH = Z1^2 + Z2^2
+```
+
+# Now lets reject or not $H_0$
+
+In this case our $\alpha$ is going to be 0.10 (different from Mardia Test). 
+
+```{R}
+    df <-2 
+    alpha<-0.1
+    crit <- qchisq(1 - alpha, df)
+
     x <- seq(0, max(DH, crit)*1.5, length=1000)
     y <- dchisq(x, df)
 
-    plot(x, y, type="l", lwd=2,
-        main="Rejection Region - Doornik-Hansen Test",
-        xlab="Doornik-Hansen Statistic",
-        ylab="Density")
-
+    plot(x, y, type="l", lwd=2, main="Rejection Region - Doornik-Hansen Test", xlab="DH", ylab="Density")
 
     x_rej <- seq(crit, max(x), length=500)
     y_rej <- dchisq(x_rej, df)
 
-    polygon(c(crit, x_rej, max(x)),
-            c(0, y_rej, 0),
-            col="red", border=NA)
-
+    polygon(c(crit, x_rej, max(x)), c(0, y_rej, 0), col="red", border=NA)
 
     abline(v=crit, col="red", lwd=2, lty=2)
-
-
     abline(v=DH, col="blue", lwd=2)
-
-
-    legend("topright",
-        legend=c("Chi-square density", "Critical value", "DH statistic"),
-        col=c("black", "red", "blue"),
-        lwd=2,
-        lty=c(1,2,1))
 ```
-## Interpretation
-The Doornik–Hansen test produced a p-value of `r pValueDH`.
+Since the observed value of the Doornik–Hansen statistic is greater than the critical value, it lies within the rejection region. Therefore, we reject the null hypothesis of multivariate normality.
 
-Since the observed value of the statistic is greater than the critical value, it lies within the rejection region. Therefore, we reject the null hypothesis of multivariate normality.
+This result is expected, as the dataset contains observations from multiple species, which creates a mixture of distributions and violates the assumption of a single multivariate normal distribution.
 
-This result indicates that, despite the smoother appearance of the variables, the joint distribution of the dataset does not follow a multivariate normal distribution.

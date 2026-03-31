@@ -73,8 +73,10 @@ This matrix contains the Mahalanobis structure, where the diagonal elements corr
 
 ## Lets get EAS and Z1
 ```{R}
-    EAS <- n/6 * b1p
-    Z1 <- sqrt(EAS)
+    EAS <- (n/6 * b1p)
+    df_skew <- (p*(p+1)*(p+2))/6
+
+    Z1 <- (EAS - df_skew) / sqrt(2*df_skew)
 ```
 The skewness component is approximated using the Mardia skewness statistic.
 # Second we compute kurtosis test 
@@ -135,5 +137,5 @@ In this case our $\alpha$ is going to be 0.10 (different from Mardia Test).
     abline(v=crit, col="red", lwd=2, lty=2)
     abline(v=DH, col="blue", lwd=2)
 ```
-Since the observed value of the Doornik–Hansen statistic is greater than the critical value, it falls within the rejection region. Therefore, we reject the null hypothesis of multivariate normality.
+Since the observed value of the Doornik–Hansen statistic is smaller than the critical value, it lies outside the rejection region. Therefore, we do not reject the null hypothesis of multivariate normality.
 

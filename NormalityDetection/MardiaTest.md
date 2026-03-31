@@ -210,6 +210,13 @@ If p-value ≤ $\alpha$, the null hypothesis is rejected.
 
 To conclude that the dataset follows a multivariate normal distribution, both tests must be non-significant.
 
+---
+## Prove characteristics 
+--- 
+
+The Mardia test is a widely used method for assessing multivariate normality based on two key components: skewness and kurtosis. It evaluates whether the joint distribution of the data exhibits symmetry and tail behavior consistent with a multivariate normal distribution. One of its main strengths is that it provides separate measures for skewness and kurtosis, allowing the researcher to identify the specific type of deviation from normality. The test is asymptotic, meaning its accuracy improves with larger sample sizes, and it assumes that the covariance matrix is non-singular. However, it can be sensitive to outliers and may over-reject normality in the presence of small departures, especially in moderate to large samples. Despite these limitations, Mardia’s test remains a fundamental tool in multivariate analysis due to its interpretability and theoretical foundation.
+
+
 ## Interpretation
 --- 
 
