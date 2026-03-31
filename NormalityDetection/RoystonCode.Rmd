@@ -1,0 +1,17 @@
+
+
+```{R}
+results <- apply(mtcars[,1:4], 2, shapiro.test)
+```
+
+```{R}
+pvals <- sapply(results, function(x) x$p.value)
+pvals
+```
+
+```{R}
+X2 <- -2 * sum(log(pvals))
+df <- 2 * length(pvals)
+
+p_combined <- pchisq(X2, df = df, lower.tail = FALSE)
+```

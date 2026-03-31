@@ -12,6 +12,18 @@ tail(iris)
 dim(iris)
 names(iris) 
 ```
+
+## Describe dataset 
+
+The iris dataset is a well-known dataset in statistics and machine learning that contains measurements of iris flowers from three different species: *setosa*, *versicolor*, and *virginica*.
+
+It consists of 150 observations and 5 variables. The first four variables are quantitative measurements: sepal length, sepal width, petal length, and petal width (all measured in centimeters). The fifth variable is categorical and indicates the species of each flower.
+
+For the purpose of multivariate normality analysis, only the numerical variables are considered, since the Mardia test applies to continuous multivariate data.
+
+Additionally, since the dataset includes observations from different species, it is expected that the assumption of multivariate normality may not hold globally.
+
+
 ---
 ## Let's apply Mardia
 ---
@@ -66,17 +78,55 @@ This matrix contains the Mahalanobis structure, where the diagonal elements corr
     alpha<-0.05
 ```
 
+## Now we have obtained the key values for the Mardia Test
+
+So its important to graph this in a better way to decide if we reject H₀ (the data come from a multivariate normal distribution). Under the null hypothesis, the skewness test statistic follows a chi-square distribution with \(df = \frac{p(p+1)(p+2)}{6}\).
+
+```{R}
+    crit <- qchisq(1 - alpha, df)
+
+    x <- seq(0, max(EAS, crit)*1.5, length=1000)
+    y <- dchisq(x, df)
+
+    plot(x, y, type="l", lwd=2, main="Rejection Region - Skewness Test", xlab="EAS", ylab="Density")
+
+    x_rej <- seq(crit, max(x), length=500)
+    y_rej <- dchisq(x_rej, df)
+
+    polygon(c(crit, x_rej, max(x)), c(0, y_rej, 0), col="red", border=NA)
+
+    abline(v=crit, col="red", lwd=2, lty=2)
+    abline(v=EAS, col="blue", lwd=2)
+```
+
+Since the observed value of EAS is greater than the critical value, it falls within the rejection region. Therefore, we reject the null hypothesis of multivariate normality based on the skewness test.
+
+As we see the critical value is 31.41043. This means that any value greater than the critical value lies in the rejection region. In this case our EAS (Estadistico de asimetría). And by the definition of Mardia test, if skewness test or kurtosis test provide enogh to reject H_0 (Data comes from a multivariate normal distribution) we conclude that there is sufficient statistical evidence to reject the assumption of multivariate normality. In this case, even if we don't compute the Kurtosis Test we conclude that there is sufficient statistical evidence to reject the assumption of multivariate normality. Although the skewness test alone is sufficient to reject multivariate normality, we also compute the kurtosis test to provide a complete assessment of Mardia’s procedure.
+
+## Why we use p-value and critical value
+
+Both the p-value approach and the critical value approach are equivalent ways to test the same hypothesis.
+The p-value represents the probability of observing a value as extreme as the test statistic under the null hypothesis. On the other hand, the critical value defines a threshold that separates the acceptance region from the rejection region.
+
+The decision rules are:
+
+- Reject \(H_0\) if \(p\text{-value} < \alpha\)
+- Reject \(H_0\) if \(EAS > \chi^2_{1-\alpha, df}\)
+
 # Lets compute now Kurtosis Test 
 
 ```{R}
     b2p <- (1/n) * sum(diag(M)^2)
 ``` 
+Again, this is just a value. It means that by itself it doesn't provide a source to reject or not H_0. But is the supply for getting the Test Statistic. 
 
 ## Now lets compute z 
 
 ```{R}
     z <- (b2p - p*(p+2)) / sqrt((8*p*(p+2))/n)
 ```
+
+In this case, we have now the test statistic Z, which is defined as the difference between b2p (coeficient of kurtosis) and a estimator of Normality divided by and estimator of standard deviation. In other words, it calculates how far is the kurtosis coeficient got from data to the actual estimated kurtosis coeficient that theorically we should have if the data come from a normal distribution. Of course, this value is standarized when we divide by the standard deviation.
 
 ## Now lets compute pValue for Kurtosis 
 
@@ -85,10 +135,13 @@ This matrix contains the Mahalanobis structure, where the diagonal elements corr
     alpha <-0.05
 ```
 
+It's time to reject or not H_0, has you can see we now get the pValueKurtosis which is the probability of observe a extreme value as the obtained, assuming that data comes from a normal distribution. In this case, we obtained a p-value of `r pValueKurtosis`, which is greater than the significance level `r alpha`. Therefore, we do not reject the null hypothesis.
+
+
 ## Interpretation
 
 The skewness test produced a p-value of `r pValueSkewness`, which is smaller than the significance level `r alpha`. Therefore, the null hypothesis of multivariate normality is rejected.
 
 The kurtosis test produced a p-value of `r pValueKurtosis`, which is greater than `r alpha`. Thus, there is no evidence against multivariate kurtosis.
 
-However, since the skewness test is significant, the assumption of multivariate normality is rejected for the iris dataset according to Mardia's test. This result is expected because the dataset contains observations from different species populations.
+This result suggests that the deviation from normality is primarily driven by asymmetry rather than differences in tail behavior. However, since the skewness test is significant, the assumption of multivariate normality is rejected for the iris dataset according to Mardia's test. This result is expected because the dataset contains observations from different species populations.
