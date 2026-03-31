@@ -1,0 +1,196 @@
+## Install packages and dataset
+
+```{R}
+install.packages("ggplot2movies")
+library(ggplot2movies)
+``` 
+
+## Describe dataset
+```{R} 
+data(movies)
+tail(movies)
+print("Here the number of samples we have: ")
+dim(movies)
+```
+The movies dataset contains information on thousands of films, including variables such as duration, budget, rating, and number of votes. It is a large-scale dataset with tens of thousands of observations, which provides a rich context for statistical analysis. The variables used in this study are continuous and capture different aspects of movie production and audience reception. However, the dataset is characterized by strong asymmetry, the presence of extreme values, and missing observations, particularly in the budget variable. These features make it especially suitable for evaluating deviations from multivariate normality, as real-world data of this type rarely follow ideal distributional assumptions.
+
+## Data extraction 
+In this case, as we want to present the univariate case, we will extract a single variable to check outliers, the choosen variable in year. 
+```{R}
+    X = movies$year
+```
+## Plot outliers 
+
+Now, lets graph a boxplot where we can check outliers. 
+```{R}
+    boxplot(X,main="Boxplot for release year", col="brown")
+```
+
+In this case, we can observe that our dataset contains outliers. This is unusual because, according to the boxplot, some movies appear to have been released before the 1900s.
+
+## Get a second variable 
+As we want to apply a bivariate analysis, then we got to extract a second variable. In this case is length. Lets see outliers using these two variables (released year and length)
+```{R}
+    Y =movies$length
+```
+## Bagplot 
+The selected graph is going to be Bagplot. Which is a extension of Boxplot but for bivariate case: 
+```{R}
+    install.packages("aplpack")
+    library(aplpack)
+```
+```{R}
+    rangeForLength = c(0, 500)
+    bagplot(X,Y,ylim = rangeForLength,main="Bagplot for released year and length ",xlab="Released year",ylab="Length of the movie")
+    bp<-bagplot(X, Y, ylim=rangeForLength,show.looppoints = FALSE, do.plot = TRUE)
+    bp$outlier
+```
+
+In this case, each point located outside the outer region (loop) of the bagplot is considered an outlier. For example, movies with unusually large lengths, such as those exceeding 200 minutes and released around the 2000s, can be identified as outliers.
+
+## Multivariate case 
+
+In this scenario, we cannot use boxplots or bagplots because we have p variables, where p > 2. Therefore, we use multivariate techniques, both of which rely on the Mahalanobis distance.
+
+## Using S. Covariance and Variance matrix 
+
+### Select variables we will use 
+```{R}
+str(movies)
+variables <- c("year", "length", "rating", "votes")
+data_clean <- na.omit(movies[, variables])
+```
+For outlier detection, a subset of continuous numerical variables was selected. This allows the identification of unusual observations based on meaningful relationships between variables.
+
+### Confirm structure 
+```{R}
+str(data_clean)
+dim(data_clean)
+```
+
+### Define our matrix X, S and Mahalanobis distance
+```{R}
+X <- as.matrix(data_clean)
+X<-scale(X)
+S <-cov(X)
+center <- colMeans(X)
+S_inv <-solve(S)
+D2 <- mahalanobis(X, center, S)
+```
+
+### Cutoff.
+After this point, each element is considered an outlier. 
+```{R}
+cutoff <- qchisq(0.99, df = ncol(X))
+
+outliers <- which(D2 > cutoff)
+```
+
+### Lets plot 
+```{R}
+pairs(X,col = ifelse(D2 > cutoff, "red", "black"),pch = 16, main = "Outliers (pairwise view)")
+```
+
+The pairwise scatterplot matrix highlights the presence of multivariate outliers, identified using the Mahalanobis distance. These observations appear consistently across multiple variable combinations, particularly involving the number of votes and movie length.
+
+In particular, movies with extremely high vote counts and unusually long durations clearly deviate from the main data cluster. This confirms that the detected outliers are not univariate anomalies, but rather observations that exhibit unusual behavior in the joint distribution of the variables.
+
+## Using determinate of min covariance 
+
+### The concept
+
+The idea behind this approach is not to use the entire dataset, but instead to select the most compact subset of observations and use it to compute the Mahalanobis distance.
+
+```{R}
+n <- nrow(X)
+p <- ncol(X)
+
+h <- floor((n + p + 1)/2)
+
+```
+
+Here we difine the size of the subset and the number of samples we have, and number of variables (in this case 4)
+
+## Calculate min determinate 
+
+```{R}
+
+best_det <- Inf
+
+for (i in 1:200) {   
+    
+    idx <- sample(1:n, h)
+    subset <- X[idx, ]
+    
+    S_sub <- cov(subset)
+    det_S <- det(S_sub)
+    
+    if (det_S < best_det && det_S > 0) {
+        best_det <- det_S
+        best_subset <- subset
+    }
+}
+```
+
+### Robust stimators 
+```{R}
+center_mcd <- colMeans(best_subset)
+S_mcd <- cov(best_subset)
+```
+### Mahalanobis distance with Robust stimators
+```{R}
+D2_mcd <- mahalanobis(X, center_mcd, S_mcd)
+```
+
+### Cutoff.
+After this point, each element is considered an outlier. 
+```{R}
+cutoff <- qchisq(0.99, df = ncol(X))
+
+outliers <- which(D2_mcd > cutoff)
+```
+
+### Lets plot 
+```{R}
+pairs(X,col = ifelse(D2_mcd > cutoff, "red", "black"),pch = 16, main = "Outliers (pairwise view)")
+```
+
+## Using functions for finding best stimators 
+
+### Install packages
+```{R}
+install.packages("robustbase")
+library(robustbase)
+```
+
+### Calculate mcd 
+
+```{R}
+mcd <- covMcd(X)
+mcd$center     # Xc robust
+mcd$cov      # S robust  
+```
+
+### Calculate Mahalanobis Robust using functions
+```{R}
+D2_robust <- mahalanobis(X, mcd$center, mcd$cov)
+```
+
+### Plot 
+```{R}
+cutoff <- qchisq(0.99, df = ncol(X))
+
+outliers_mcd <- which(D2_robust > cutoff)
+```
+
+```{R}
+pairs(X,col = ifelse(D2_robust > cutoff, "red", "black"),pch = 16, main = "Outliers (pairwise view)")
+```
+
+## Final Conclusion
+
+Outlier detection was performed using different approaches, including univariate, bivariate, and multivariate methods. While boxplots and bagplots allow for visual identification of unusual observations, the Mahalanobis distance provides a formal multivariate criterion based on the covariance structure of the data.
+
+However, due to the presence of skewness and extreme values, the classical Mahalanobis distance tends to overestimate the number of outliers. To address this issue, a robust approach based on the Minimum Covariance Determinant (MCD) was implemented, both manually and using built-in functions.
+
+The results show that robust methods provide a more reliable identification of outliers, highlighting the importance of considering data distribution when applying multivariate techniques.
