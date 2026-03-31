@@ -1,0 +1,121 @@
+---
+title: "Normality Detection"
+author: "Simon Sloan"
+output: html_document
+---
+
+## Lets import the dataset
+In this case we will use the trees dataset
+```{R}
+data(trees)
+tail(trees)
+dim(trees)
+```
+
+
+## Describe dataset 
+The `trees` dataset contains measurements of 31 black cherry trees. It includes three continuous variables: girth (tree diameter), height, and volume.
+
+This dataset is relatively small but consists entirely of continuous variables, making it suitable for multivariate normality testing.
+
+Compared to previous datasets such as mtcars, the variables in this dataset tend to exhibit smoother distributions with fewer extreme values, which makes it more likely to satisfy the assumption of multivariate normality.
+
+## Lets apply Doornik-Hansen
+```{R}
+X <- as.matrix(trees)
+
+n <- nrow(X)
+p <- ncol(X)
+
+I <- diag(n)
+Jn <- matrix(1, nrow = n, ncol = n)
+
+Xc <- (I - 1/n * Jn) %*% X
+XcT <- t(Xc)
+
+S <- 1/(n - 1) * (XcT %*% Xc)
+SAuto <- cov(X)
+
+if (isTRUE(all.equal(S, SAuto))) {
+    print("We got the same results")
+}
+```
+
+### Mahalanobis matrix 
+```{R}
+SInvert <- solve(S)
+M <- Xc %*% SInvert %*% XcT
+```
+
+## Skewness component 
+```{R}
+b1p <- 0
+
+for (i in 1:nrow(M)) {
+    for (j in 1:ncol(M)) {
+        b1p <- b1p + (1/(n^2)) * (M[i, j])^3
+    }
+}
+
+EAS <- (n/6 * b1p)
+
+Z1 <- sqrt(EAS)
+```
+
+## Kurtosis component
+```{R}
+b2p <- (1/n) * sum(diag(M)^2)
+
+Z2 <- (b2p - p*(p+2)) / sqrt(8*p*(p+2)/n)
+```
+
+## Doornik-Hansen statistic
+```{R}
+DH <- Z1^2 + Z2^2
+```
+
+## Our Decision
+```{R}
+alpha <- 0.10
+df <- 2
+
+crit <- qchisq(1 - alpha, df)
+pValueDH <- pchisq(DH, df, lower.tail = FALSE)
+```
+## Lets graph 
+```{R}
+    x <- seq(0, max(DH, crit)*1.5, length=1000)
+    y <- dchisq(x, df)
+
+    plot(x, y, type="l", lwd=2,
+        main="Rejection Region - Doornik-Hansen Test",
+        xlab="Doornik-Hansen Statistic",
+        ylab="Density")
+
+
+    x_rej <- seq(crit, max(x), length=500)
+    y_rej <- dchisq(x_rej, df)
+
+    polygon(c(crit, x_rej, max(x)),
+            c(0, y_rej, 0),
+            col="red", border=NA)
+
+
+    abline(v=crit, col="red", lwd=2, lty=2)
+
+
+    abline(v=DH, col="blue", lwd=2)
+
+
+    legend("topright",
+        legend=c("Chi-square density", "Critical value", "DH statistic"),
+        col=c("black", "red", "blue"),
+        lwd=2,
+        lty=c(1,2,1))
+```
+## Interpretation
+The Doornik–Hansen test produced a p-value of `r pValueDH`.
+
+Since the observed value of the statistic is greater than the critical value, it lies within the rejection region. Therefore, we reject the null hypothesis of multivariate normality.
+
+This result indicates that, despite the smoother appearance of the variables, the joint distribution of the dataset does not follow a multivariate normal distribution.

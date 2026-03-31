@@ -1,3 +1,9 @@
+---
+title: "Normality Detection"
+author: "Simon Sloan"
+output: html_document
+---
+
 ## Lets import the dataset
 In this case we will use a dataset of cars
 ```{R}
