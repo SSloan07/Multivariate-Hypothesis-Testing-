@@ -1,0 +1,133 @@
+## Lets import the dataset
+In this case we will use a dataset of cars
+```{R}
+    data(mtcars) 
+    tail(mtcars)
+    dim(mtcars)
+```
+
+## Describe dataset
+
+The `mtcars` dataset contains information about 32 automobiles and 11 variables describing their performance and design characteristics.
+
+The variables include measurements such as fuel efficiency (`mpg`), engine displacement (`disp`), horsepower (`hp`), vehicle weight (`wt`), and acceleration (`qsec`), among others. This dataset is relatively small, with only 32 observations, but it includes multiple variables, making it suitable for multivariate analysis.
+
+However, not all variables are continuous. Some variables, such as `vs`, `am`, `gear`, and `carb`, represent categorical or discrete characteristics of the vehicles. Since the Doornik–Hansen test is designed for continuous multivariate data, these variables are excluded from the analysis. Therefore, the analysis focuses on the subset of continuous variables, ensuring that the assumptions of the test are more appropriate for the data structure.
+
+---
+
+## Let's apply Doornik–Hansen
+
+---
+
+Here we will start with the application of Doornik–Hansen, according with its respective definition. Of course, here we will use the same structure as Mardia where you can see the first step is stract continuos variables and get Mahalanobis Matrix. 
+---
+
+```{r}
+    X <- as.matrix(mtcars[, c("mpg", "disp", "hp", "wt", "qsec", "drat")])
+    n <- 32
+    p <- 6 
+    I <- diag(n)
+    Jn <- matrix(1, nrow = n, ncol = n) 
+    Xc <- (I - 1/n*Jn)%*%X
+    XcT <- t(Xc)
+    S <- 1/(n-1) * (XcT%*%Xc)
+    # This is the easiest way. However we do it, as before because is better to understand.
+    SAuto <- cov(X)
+
+    if (isTRUE(all.equal(S, SAuto))) {
+        print("We got the same results")
+    }
+```
+
+### Now, it is important to get Mahalanobis Matrix
+This matrix contains the Mahalanobis structure, where the diagonal elements correspond to squared Mahalanobis distances. 
+
+```{R}
+    SInvert = solve(S)
+    M = Xc%*%SInvert%*%XcT
+```
+
+# First lets compute skewness test
+## Get b1p
+
+```{R}
+    b1p <- 0
+
+    for (i in 1:nrow(M)) {
+        for (j in 1:ncol(M)) {
+            
+            element <- (1/(n^2)) * (M[i, j])^3
+            
+            b1p <- b1p + element
+            
+        }
+    }
+```
+
+## Lets get EAS and Z1
+```{R}
+    EAS <- n/6 * b1p
+    Z1 <- sqrt(EAS)
+```
+The skewness component is approximated using the Mardia skewness statistic.
+# Second we compute kurtosis test 
+## Get b2p and Z2
+As follow it is present the Z2 formula, which represents the value for Z in Mardia Test. Remember, it represents the kurtosis coeficient. Kurtosis is asosciated with how heavy are the tails: 
+$$
+b_{2,p} =
+\frac{1}{n}
+\sum_{i=1}^{n}
+m_{ii}^{2}
+$$
+
+$$
+Z_2 =
+\frac{b_{2,p} - p(p+2)}
+{\sqrt{\frac{8p(p+2)}{n}}}
+$$
+
+
+We will compute this using the formula. 
+```{R}
+    b2p <- (1/n) * sum(diag(M)^2)
+    Z2 <- (b2p - p*(p+2))/sqrt(8*p*(p+2)/n)
+```
+
+# Now, lets get DH 
+This is the formula for getting the DH stimator statistic and is probability distribution: 
+$$
+DH = Z_1^2 + Z_2^2
+$$
+$$
+DH \sim \chi^2_2
+$$
+So lets compute as it indicates: 
+```{R}
+ DH = Z1^2 + Z2^2
+```
+
+# Now lets reject or not $H_0$
+
+In this case our $\alpha$ is going to be 0.10 (different from Mardia Test). 
+
+```{R}
+    df <-2 
+    alpha<-0.1
+    crit <- qchisq(1 - alpha, df)
+
+    x <- seq(0, max(DH, crit)*1.5, length=1000)
+    y <- dchisq(x, df)
+
+    plot(x, y, type="l", lwd=2, main="Rejection Region - Doornik-Hansen Test", xlab="DH", ylab="Density")
+
+    x_rej <- seq(crit, max(x), length=500)
+    y_rej <- dchisq(x_rej, df)
+
+    polygon(c(crit, x_rej, max(x)), c(0, y_rej, 0), col="red", border=NA)
+
+    abline(v=crit, col="red", lwd=2, lty=2)
+    abline(v=DH, col="blue", lwd=2)
+```
+Since the observed value of the Doornik–Hansen statistic is greater than the critical value, it falls within the rejection region. Therefore, we reject the null hypothesis of multivariate normality.
+

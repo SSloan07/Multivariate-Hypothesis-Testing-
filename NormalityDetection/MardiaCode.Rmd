@@ -115,6 +115,7 @@ The decision rules are:
 
 # Lets compute now Kurtosis Test 
 
+
 ```{R}
     b2p <- (1/n) * sum(diag(M)^2)
 ``` 
