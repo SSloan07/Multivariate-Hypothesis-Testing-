@@ -1,6 +1,9 @@
 ## Install packages and dataset
 
 ```{R}
+options(repos = c(CRAN = "https://cloud.r-project.org"))
+```
+```{R}
 install.packages("ggplot2movies")
 library(ggplot2movies)
 ``` 
@@ -23,6 +26,7 @@ In this case, as we want to present the univariate case, we will extract a singl
 
 Now, lets graph a boxplot where we can check outliers. 
 ```{R}
+    x11()
     boxplot(X,main="Boxplot for release year", col="brown")
 ```
 
@@ -40,6 +44,7 @@ The selected graph is going to be Bagplot. Which is a extension of Boxplot but f
     library(aplpack)
 ```
 ```{R}
+    x11()
     rangeForLength = c(0, 500)
     bagplot(X,Y,ylim = rangeForLength,main="Bagplot for released year and length ",xlab="Released year",ylab="Length of the movie")
     bp<-bagplot(X, Y, ylim=rangeForLength,show.looppoints = FALSE, do.plot = TRUE)
@@ -88,6 +93,7 @@ outliers <- which(D2 > cutoff)
 
 ### Lets plot 
 ```{R}
+x11()
 pairs(X,col = ifelse(D2 > cutoff, "red", "black"),pch = 16, main = "Outliers (pairwise view)")
 ```
 
@@ -152,6 +158,7 @@ outliers <- which(D2_mcd > cutoff)
 
 ### Lets plot 
 ```{R}
+x11()
 pairs(X,col = ifelse(D2_mcd > cutoff, "red", "black"),pch = 16, main = "Outliers (pairwise view)")
 ```
 
@@ -184,6 +191,7 @@ outliers_mcd <- which(D2_robust > cutoff)
 ```
 
 ```{R}
+x11()
 pairs(X,col = ifelse(D2_robust > cutoff, "red", "black"),pch = 16, main = "Outliers (pairwise view)")
 ```
 
