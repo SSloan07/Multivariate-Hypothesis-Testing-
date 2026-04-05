@@ -1,0 +1,22 @@
+## Introduction
+
+The goal of this analysis is to evaluate multivariate normality using two approaches:
+
+1. An approximate method based on Mardia’s skewness and kurtosis.
+2. The Doornik–Hansen test, which provides a more reliable assessment.
+
+This comparison allows us to understand the importance of proper calibration in statistical tests.
+
+## Data generation
+
+We simulate a dataset from a multivariate normal distribution with a predefined mean vector and covariance matrix.
+
+```{R}
+X <- as.data.frame(trees)
+
+library(MVN)
+
+result <- mvn(data = X, mvn_test = "doornik_hansen")
+
+result$multivariate_normality
+```

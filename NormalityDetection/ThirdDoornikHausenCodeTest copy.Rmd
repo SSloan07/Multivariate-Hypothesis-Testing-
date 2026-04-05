@@ -5,34 +5,43 @@ output: html_document
 ---
 
 ## Lets import the dataset
-In this case we will use a dataset of cars
+In this case we will use the iris dataset
 ```{R}
-    data(mtcars) 
-    tail(mtcars)
-    dim(mtcars)
+library(MASS)
+
+set.seed(123)
+
+X <- mvrnorm(
+  n = 150,
+  mu = c(0, 0, 0, 0),
+  Sigma = matrix(c(
+    1, 0.3, 0.2, 0.1,
+    0.3, 1, 0.4, 0.2,
+    0.2, 0.4, 1, 0.5,
+    0.1, 0.2, 0.5, 1
+  ), 4, 4)
+)
+
 ```
 
 ## Describe dataset
 
-The `mtcars` dataset contains information about 32 automobiles and 11 variables describing their performance and design characteristics.
-
-The variables include measurements such as fuel efficiency (`mpg`), engine displacement (`disp`), horsepower (`hp`), vehicle weight (`wt`), and acceleration (`qsec`), among others. This dataset is relatively small, with only 32 observations, but it includes multiple variables, making it suitable for multivariate analysis.
-
-However, not all variables are continuous. Some variables, such as `vs`, `am`, `gear`, and `carb`, represent categorical or discrete characteristics of the vehicles. Since the Doornik–Hansen test is designed for continuous multivariate data, these variables are excluded from the analysis. Therefore, the analysis focuses on the subset of continuous variables, ensuring that the assumptions of the test are more appropriate for the data structure.
+In this case, we generate a dataset from a multivariate normal distribution using a predefined mean vector and covariance matrix.
 
 ---
+
 
 ## Approximate multivariate normality test (Mardia-based)
 
 ---
 
-Here we apply an approximate multivariate normality test based on Mardia’s skewness and kurtosis measures.. Of course, here we will use the same structure as Mardia where you can see the first step is stract continuos variables and get Mahalanobis Matrix. 
+Here we will start with the application of Doornik–Hansen, according with its respective definition. Of course, here we will use the same structure as Mardia where you can see the first step is stract continuos variables and get Mahalanobis Matrix. 
 ---
 
 ```{r}
-    X <- as.matrix(mtcars[, c("mpg", "disp", "hp", "wt", "qsec", "drat")])
-    n <- 32
-    p <- 6 
+    X <- as.matrix(X)
+    n <- 150
+    p <- 4 
     I <- diag(n)
     Jn <- matrix(1, nrow = n, ncol = n) 
     Xc <- (I - 1/n*Jn)%*%X
@@ -137,16 +146,38 @@ In this case our $\alpha$ is going to be 0.10 (different from Mardia Test).
     abline(v=crit, col="red", lwd=2, lty=2)
     abline(v=DH, col="blue", lwd=2)
 ```
+Since the observed value of the Doornik–Hansen statistic is greater than the critical value, it lies within the rejection region. Therefore, we reject the null hypothesis of multivariate normality.
 
+The rejection obtained in the manual implementation is not due to the data itself, but to the use of approximations that are not properly calibrated. Since the data were generated from a multivariate normal distribution, the correct result should be not to reject normality.
 
-# Using a library for real Doornik-Hansen
+--- 
+# Download MVN library
 
 ```{R}
-X_df <- as.data.frame(mtcars[, c("mpg", "disp", "hp", "wt", "qsec", "drat")])
-
-result <- mvn(data = X_df, mvn_test = "doornik_hansen")
-
-result$multivariate_normality
+install.packages("MVN")   
+library(MVN)
 ```
 
-In this case, the approximate method suggests that the statistic does not fall in the rejection region. However, this result should be interpreted with caution due to the limitations of the approximation and the small sample size.
+---
+# Convert Dataset into Dataframe 
+---
+```{R}
+X_df <- as.data.frame(X)
+```
+# Real Doornik–Hansen Test 
+
+--- 
+
+```{R}
+result <- mvn(data = X_df, mvn_test = "doornik_hansen")
+
+names(result)
+
+res <- result$multivariate_normality
+
+res[, c("Test", "Statistic", "p.value", "MVN")]
+```
+
+The Doornik–Hansen test does not reject the null hypothesis of multivariate normality. This result is consistent with the fact that the dataset was generated from a multivariate normal distribution. The difference with the manual implementation highlights the importance of using properly calibrated statistical tests.
+
+This comparison demonstrates that simplified implementations can lead to misleading conclusions, especially when higher-order moments are not properly standardized.

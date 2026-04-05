@@ -39,7 +39,7 @@ Here we will start with the application of Mardia, according with its respective
     Jn <- matrix(1, nrow = n, ncol = n) 
     Xc <- (I - 1/n*Jn)%*%X
     XcT <- t(Xc)
-    S <- 1/n * (XcT%*%Xc)
+    S <- 1/(n-1) * (XcT%*%Xc)
     # This is the easiest way. However we do it, as before because is better to understand.
     SAuto <- cov(X)
 ```

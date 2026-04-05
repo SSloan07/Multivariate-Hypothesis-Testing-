@@ -139,3 +139,29 @@ Since the observed value of the Doornik–Hansen statistic is greater than the c
 
 This result is expected, as the dataset contains observations from multiple species, which creates a mixture of distributions and violates the assumption of a single multivariate normal distribution.
 
+
+```{R}
+install.packages("MVN")   
+library(MVN)
+```
+
+---
+```{R}
+X_df <- as.data.frame(iris[,1:4])
+```
+# Real Doornik–Hansen Test 
+
+--- 
+
+```{R}
+result <- mvn(data = X_df, mvn_test = "doornik_hansen")
+
+names(result)
+
+res <- result$multivariate_normality
+
+res[, c("Test", "Statistic", "p.value", "MVN")]
+```
+
+# conclusions 
+This study compares an approximate multivariate normality test based on Mardia’s measures with the Doornik–Hansen test. In the simulated dataset, the approximate method incorrectly rejects normality due to poor calibration, while the Doornik–Hansen test provides the correct result. In contrast, for the iris dataset, both methods reject normality, as expected, due to the presence of multiple underlying distributions. These results highlight that discrepancies between tests occur when data are close to normality, while strong deviations are consistently detected by different methods.
