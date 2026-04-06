@@ -59,6 +59,23 @@ In this scenario, we cannot use boxplots or bagplots because we have p variables
 
 ## Using S. Covariance and Variance matrix 
 
+The idea is to measure how far each observation $X_i$ is from the center of the data $\bar{X}$, taking into account the correlation between variables. It's the same procedure we saw earlier in Mardia's test, just with a different purpose:
+
+$$
+D_i^2 = (X_i - \bar{X})^T S^{-1} (X_i - \bar{X})
+$$
+Now, if the data come from a k-variate normal distribution, then:
+
+$$
+D_i^2 \text{ ~ } \chi^2_{k}
+$$
+Now, an observation is an outlier if:
+
+$$
+D_i^2 > \chi^2_{\alpha, k}
+$$
+
+
 ### Select variables we will use 
 ```{R}
 str(movies)
@@ -102,6 +119,10 @@ The pairwise scatterplot matrix highlights the presence of multivariate outliers
 In particular, movies with extremely high vote counts and unusually long durations clearly deviate from the main data cluster. This confirms that the detected outliers are not univariate anomalies, but rather observations that exhibit unusual behavior in the joint distribution of the variables.
 
 ## Using determinate of min covariance 
+
+If we compute the sample mean and covariance using all the data, the outliers themselves contaminate those estimates: they inflate the covariance and shift the mean. This makes outliers appear less extreme than they really are. This is known as the masking effect.
+
+The idea behind this method is to find the subset of h observations (typically h ≈ 75% of the data) whose covariance matrix has the smallest possible determinant. That minimum determinant implies we found the most "compact" subset of the data. Then, the sample mean and covariance of that subset are used as robust estimators.
 
 ### The concept
 

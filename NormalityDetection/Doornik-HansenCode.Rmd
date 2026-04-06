@@ -1,6 +1,6 @@
 ---
 title: "Normality Detection"
-author: "Simon Sloan"
+author: "Simon Sloan - Alejandro Tirado"
 output: html_document
 ---
 
